@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Course Advisory System</title>
+    <!-- Include Bootstrap CSS -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  </head>
+  <body>
+    <header>
+      <h1>Course Advisory System</h1>
+    </header>
+    <main>
+      <div class="icon-box-container">
+        <a href="/student" class="icon-box">
+          <img src="{{ url_for('static', filename='img/student.png') }}" alt="Student">
+          <h2>Student</h2>
+        </a>
+        <a href="/lecturer" class="icon-box">
+          <img src="{{ url_for('static', filename='img/teacher.png') }}" alt="Lecturer">
+          <h2>Lecturer</h2>
+        </a>
+      </div>
+    </main>
+  </body>
+</html>
