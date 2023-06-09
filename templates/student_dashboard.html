@@ -4,7 +4,6 @@
   <title>Student Dashboard</title>
   <!-- Include CSS and other necessary resources -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/3.1.3/socket.io.min.js"></script>
 
 </head>
 <body>
@@ -17,9 +16,9 @@
             <nav>
                 <ul>
                     <li class="sidebar-item active" onclick="switchSection('dashboard')">Dashboard</li>
-                    <li class="sidebar-item" onclick="switchSection('profile')">Profile</li>
-                    <li class="sidebar-item" onclick="switchSection('chat')">Consult Lecturer</li>
-                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                    <li class="sidebar-item" onclick="switchSection('student-chat')">Consult Lecturer</li>
+                    <li class="sidebar-item" onclick="switchSection('faq')">FAQ</li>
+                    <li class="sidebar-item" ><a href="{{ url_for('logout') }}">Logout</a></li>
                 </ul>
             </nav>
         </div>
@@ -27,114 +26,157 @@
   <h1>Welcome, User {{ session['student_name']|upper }}</h1>
 
   <!-- Other content specific to the student dashboard -->
-     <div class="lecturer-list">
-        <h2>Select a Lecturer</h2>
-  <ul>
-    {% for lecturer in lecturers %}
-    <li data-lecturer-id="{{ lecturer.id }}" onclick="selectLecturer('{{ lecturer.id }}')">{{ lecturer.firstname }} {{ lecturer.lastname }}</li>
-    {% endfor %}
-  </ul>
-    </div>
 
 
      <!-- Dashboard Section -->
     <div id="dashboard-section" class="section">
-    <!-- Dashboard Content -->
-      <h1> Hello Dashboard</h1>
+        <div class="student-info">
+        <h2>Student Information:</h2>
+        <br>
+        <br>
+        <p><strong>Matric No:</strong> {{ student.matric_no }}</p>
+        <p><strong>First Name:</strong> {{ student.firstname }}</p>
+        <p><strong>Last Name:</strong> {{ student.lastname }}</p>
+        <p><strong>Email:</strong> {{ student.email }}</p>
+        <p><strong>Level:</strong> {{ student.level }}</p>
+        <p><strong>Department:</strong> Computer Science</p>
+        <!-- Add more fields as needed -->
+    </div>
+
   </div>
 
 
-   <!-- Profile Section -->
-  <div id="profile-section" class="section" style="display: none;">
-    <!-- Profile Content -->
-      <h1>Hello Profile</h1>
-
-  </div>
 
 
-
-    <!-- Chat Section -->
-  <div id="chat-section" class="section" style="display: none;">
-    <div class="chat-section">
+<div id="student-chat-section" class="section" style="display: none;">
+  <div class="chat-section">
     <div class="chat-container">
-      <div id="chat-messages" class="chat-messages">
-        <!-- Display chat messages here -->
+      <div id="chat-dropdown">
+        <label for="lecturer-select">Select a lecturer:</label>
+        <select id="lecturer-select">
+          <option value="">Choose a lecturer</option>
+          {% for lecturer in lecturers %}
+            <option value="{{ lecturer.staff_id }}">{{ lecturer.firstname }} {{ lecturer.lastname }}</option>
+          {% endfor %}
+        </select>
+        <button type="button" id="select-button" class="btn btn-primary">Select</button>
       </div>
-      <form id="chat-form" class="chat-form">
-        <input type="text" id="chat-input" placeholder="Type your message..." />
-        <button type="submit" class="btn btn-primary">Send</button>
-      </form>
+      <div id="chat-container"></div>
     </div>
   </div>
-  </div>
 </div>
+<div id="faq-section" class="section" style="display: none;">
+  <h1>Frequently Asked Questions</h1>
+  <ul class="faq-list">
+    {% for faq in faqs %}
+      <li class="faq-item">
+        <div class="question">
+          <span class="question-text">{{ faq.question }}</span>
+          <span class="toggle-icon"><i class="fas fa-plus"></i></span>
+        </div>
+        <div class="answer">{{ faq.answer | safe}}</div>
+      </li>
+    {% endfor %}
+  </ul>
 </div>
-  <!-- Include JavaScript code for the chat functionality -->
-<script>
-  let selectedLecturerId = null;
 
-  // Function to select a lecturer
-  function selectLecturer(lecturerId) {
-    // Remove the active class from all lecturer items
-    const lecturerItems = document.querySelectorAll('.lecturer-list li');
-    lecturerItems.forEach((item) => {
-      item.classList.remove('active');
+
+</div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.0.js" integrity="sha256-JlqSTELeR4TLqP0OG9dxM7yDPqX1ox/HfgiSLBj8+kM=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.0/socket.io.min.js"></script>
+
+  <script>
+  $(document).ready(function() {
+    $('.question').click(function() {
+      $(this).toggleClass('active');
+      $(this).siblings('.answer').slideToggle();
+      $(this).find('.toggle-icon i').toggleClass('fa-plus fa-minus');
     });
+  });
+</script>
+<script>
+var socket = io.connect('http://' + document.domain + ':' + location.port);
+var selectedLecturer = null;
+var sender = '{{ session.get("student_matric_no") }}';
 
-    // Add the active class to the selected lecturer item
-    const selectedLecturerItem = document.querySelector(`.lecturer-list li[data-lecturer-id="${lecturerId}"]`);
-    selectedLecturerItem.classList.add('active');
-
-    // Set the selected lecturer ID
-    selectedLecturerId = lecturerId;
+socket.on('lecturer_message', function(data) {
+  if (selectedLecturer === data.sender) {
+    var messageContainer = document.getElementById('chat-messages-' + data.sender);
+    var newMessage = document.createElement('div');
+    newMessage.className = 'chat-message';
+    newMessage.innerText = data.sender + ': ' + data.message;
+    messageContainer.appendChild(newMessage);
   }
+});
 
-  // Connect to the SocketIO server
-  const socket = io();
+$(function() {
+  $('#select-button').click(function() {
+    selectedLecturer = $('#lecturer-select').val();
+    if (selectedLecturer) {
+      var chatContainer = document.getElementById('chat-container');
+      var chatBox = document.createElement('div');
+      chatBox.className = 'chat-box';
+      chatBox.id = 'chat-box-' + selectedLecturer;
+      chatBox.innerHTML = `
+        <h3>Chat with ${selectedLecturer}</h3>
+        <div id="chat-messages-${selectedLecturer}" class="chat-messages"></div>
+        <form id="chat-form-${selectedLecturer}" class="chat-form">
+          <input type="text" id="chat-input-${selectedLecturer}" placeholder="Type your message..." />
+          <button type="submit" id="send-button-${selectedLecturer}" class="btn btn-primary">Send</button>
+        </form>
+      `;
+      chatContainer.appendChild(chatBox);
 
-  // Join the room when the page loads
-  socket.emit('join', { user_id: '{{ session["student_id"] }}' });
+      // Retrieve chat history for the selected lecturer
+      $.ajax({
+        url: '/student/chat/history',
+        type: 'POST',
+        data: { student_matric_no: sender, lecturer_id: selectedLecturer },
+        success: function(data) {
+          var messageContainer = document.getElementById('chat-messages-' + selectedLecturer);
+          messageContainer.innerHTML = ''; // Clear existing messages
 
-  // Listen for join_room event
-  socket.on('join_room', (room) => {
-    console.log(`Joined room: ${room}`);
-  });
+          // Display the retrieved chat history
+          for (var i = 0; i < data.length; i++) {
+            var chatMessage = data[i];
+            var newMessage = document.createElement('div');
+            newMessage.className = 'chat-message';
 
-  // Listen for leave_room event
-  socket.on('leave_room', (room) => {
-    console.log(`Left room: ${room}`);
-  });
+            if (chatMessage.sender === sender) {
+              newMessage.classList.add('sent-message');
+              newMessage.innerText = 'You: ' + chatMessage.message;
+            } else {
+              newMessage.classList.add('received-message');
+              newMessage.innerText = chatMessage.sender + ': ' + chatMessage.message;
+            }
 
-  // Listen for message event
-  socket.on('message', (data) => {
-    const { student_id, message } = data;
-    const chatMessages = document.getElementById('message-container');
+            messageContainer.appendChild(newMessage);
+          }
+        }
+      });
 
-    // Create a new chat message element
-    const messageElement = document.createElement('div');
-    messageElement.classList.add('chat-message');
-    messageElement.innerText = `${student_id}: ${message}`;
+      $(`#chat-form-${selectedLecturer}`).submit(function(event) {
+        event.preventDefault();
+        var messageInput = $(`#chat-input-${selectedLecturer}`);
+        var message = messageInput.val();
+        socket.emit('student_message', { 'message': message, 'sender': sender, 'receiver': selectedLecturer });
+        messageInput.val('');
 
-    // Append the message element to the chat messages container
-    chatMessages.appendChild(messageElement);
-  });
-
-  // Send a message
-  document.getElementById('chat-form').addEventListener('submit', (event) => {
-    event.preventDefault();
-    const chatInput = document.getElementById('chat-input');
-    const message = chatInput.value.trim();
-
-    if (selectedLecturerId) {
-      // Emit the message event with the selected lecturer ID
-      socket.emit('message', { student_id: '{{ session["student_id"] }}', lecturer_id: selectedLecturerId, message });
-
-      // Clear the input field
-      chatInput.value = '';
+        var messageContainer = document.getElementById('chat-messages-' + selectedLecturer);
+        var newMessage = document.createElement('div');
+        newMessage.className = 'chat-message sent-message';
+        newMessage.innerText = 'You: ' + message;
+        messageContainer.appendChild(newMessage);
+      });
     }
   });
-  </script>
-  <script>
+});
+</script>
+
+
+      <script>
   // Function to switch sections
   function switchSection(sectionName) {
     // Hide all sections
@@ -159,6 +201,5 @@
     event.target.classList.add('active');
   }
 </script>
-
 </body>
 </html>

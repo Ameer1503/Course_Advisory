@@ -4,7 +4,7 @@
   <title>Lecturer Dashboard</title>
   <!-- Include CSS and other necessary resources -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/3.1.3/socket.io.min.js"></script>
+
 </head>
 <body>
 <div class="main-content ">
@@ -16,8 +16,7 @@
             <nav>
                 <ul>
                     <li class="sidebar-item active" onclick="switchSection('dashboard')">Dashboard</li>
-                    <li class="sidebar-item" onclick="switchSection('profile')">Profile</li>
-                    <li class="sidebar-item" onclick="switchSection('chat')">Student Chat</li>
+                    <li class="sidebar-item" onclick="switchSection('lecturer-chat')">Student Chat</li>
                     <li><a href="{{ url_for('logout') }}">Logout</a></li>
                 </ul>
             </nav>
@@ -30,7 +29,17 @@
      <!-- Dashboard Section -->
   <div id="dashboard-section" class="section">
     <!-- Dashboard Content -->
-      <h1> Hello Dashboard</h1>
+      <div class="student-info">
+        <h2>Student Information:</h2>
+          <br>
+          <br>
+        <p><strong>Staff ID:</strong> {{ lecturer.staff_id }}</p>
+        <p><strong>First Name:</strong> {{ lecturer.firstname }}</p>
+        <p><strong>Last Name:</strong> {{ lecturer.lastname }}</p>
+        <p><strong>Email:</strong> {{ lecturer.email }}</p>
+        <p><strong>Department:</strong> Computer Science</p>
+        <!-- Add more fields as needed -->
+    </div>
   </div>
 
 
@@ -42,66 +51,122 @@
   </div>
 
 
-    <!-- Chat Section -->
-  <div id="chat-section" class="section" style="display: none;">
+
+<!-- Chat Section -->
+<div id="lecturer-chat-section" class="section" style="display: none;">
   <div class="chat-section">
     <div class="chat-container">
-      <div id="chat-messages" class="chat-messages">
-        <!-- Display chat messages here -->
+      <div id="chat-dropdown">
+        <label for="student-select">Select a student:</label>
+        <select id="student-select">
+          <option value="">Choose a student</option>
+          {% for student in students %}
+            <option value="{{ student.matric_no }}">{{ student.firstname }} {{ student.lastname }}</option>
+          {% endfor %}
+        </select>
+        <button type="button" id="select-button" class="btn btn-primary">Select</button>
       </div>
-      <form id="chat-form" class="chat-form">
-        <input type="text" id="chat-input" placeholder="Type your message..." />
-        <button type="submit" id="send-button" class="btn btn-primary">Send</button>
-      </form>
+      <div id="chat-container"></div>
     </div>
   </div>
+</div>
+</div>
   </div>
-</div>
-</div>
-  <!-- Include JavaScript code for the chat functionality -->
+
+
+
+   <script src="//code.jquery.com/jquery-1.11.1.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.0/socket.io.min.js"></script>
+
 <script>
-// Connect to the SocketIO server
-const socket = io();
+var socket = io.connect('http://' + document.domain + ':' + location.port);
+var selectedStudent = null;
+var sender = '{{ session.get("lecturer_staff_id") }}';
 
-// Join the room when the page loads
-socket.emit('join', { user_id: '{{ session["student_id"] }}' });
+socket.on('student_message', function(data) {
+  if (selectedStudent === data.receiver) {
+    var messageContainer = document.getElementById('chat-messages-' + data.receiver);
+    var newMessage = document.createElement('div');
+    newMessage.className = 'chat-message';
 
-// Listen for join_room event
-socket.on('join_room', (room) => {
-  console.log(`Joined room: ${room}`);
+    if (data.sender === selectedStudent) {
+      newMessage.classList.add('sent-message');
+      newMessage.innerText = 'You: ' + data.message;
+    } else {
+      newMessage.classList.add('received-message');
+      newMessage.innerText = data.sender + ': ' + data.message;
+    }
+
+    messageContainer.appendChild(newMessage);
+  }
 });
 
-// Listen for leave_room event
-socket.on('leave_room', (room) => {
-  console.log(`Left room: ${room}`);
-});
+$(function() {
+  $('#select-button').click(function() {
+    selectedStudent = $('#student-select').val();
+    if (selectedStudent) {
+      var chatContainer = document.getElementById('chat-container');
+      var chatBox = document.createElement('div');
+      chatBox.className = 'chat-box';
+      chatBox.id = 'chat-box-' + selectedStudent;
+      chatBox.innerHTML = `
+        <h3>Chat with ${selectedStudent}</h3>
+        <div id="chat-messages-${selectedStudent}" class="chat-messages"></div>
+        <form id="chat-form-${selectedStudent}" class="chat-form">
+          <input type="text" id="chat-input-${selectedStudent}" placeholder="Type your message..." />
+          <button type="submit" id="send-button-${selectedStudent}" class="btn btn-primary">Send</button>
+        </form>
+      `;
+      chatContainer.appendChild(chatBox);
 
-// Listen for message event
-socket.on('message', (data) => {
-  const { student_id, message } = data;
-  const chatMessages = document.getElementById('message-container');
+      // Retrieve chat history for the selected student
+      $.ajax({
+        url: '/lecturer/chat/history',
+        type: 'POST',
+        data: { lecturer_staff_id: sender, student_matric_no: selectedStudent },
+        success: function(data) {
+          var messageContainer = document.getElementById('chat-messages-' + selectedStudent);
+          messageContainer.innerHTML = ''; // Clear existing messages
 
-  // Create a new chat message element
-  const messageElement = document.createElement('div');
-  messageElement.classList.add('chat-message');
-  messageElement.innerText = `${student_id}: ${message}`;
+          // Display the retrieved chat history
+          for (var i = 0; i < data.length; i++) {
+            var chatMessage = data[i];
+            var newMessage = document.createElement('div');
+            newMessage.className = 'chat-message';
 
-  // Append the message element to the chat messages container
-  chatMessages.appendChild(messageElement);
-});
+            if (chatMessage.sender === sender) {
+              newMessage.classList.add('sent-message');
+              newMessage.innerText = 'You: ' + chatMessage.message;
+            } else {
+              newMessage.classList.add('received-message');
+              newMessage.innerText = chatMessage.sender + ': ' + chatMessage.message;
+            }
 
-// Send a message
-document.getElementById('send-button').addEventListener('click', () => {
-  const chatInput = document.getElementById('message-input');
-  const message = chatInput.value.trim();
+            messageContainer.appendChild(newMessage);
+          }
+        }
+      });
 
-  // Emit the message event
-  socket.emit('message', { student_id: '{{ session["student_id"] }}', lecturer_id: selectedLecturerId, message });
+      $(`#chat-form-${selectedStudent}`).submit(function(event) {
+        event.preventDefault();
+        var messageInput = $(`#chat-input-${selectedStudent}`);
+        var message = messageInput.val();
+        socket.emit('lecturer_message', { 'message': message, 'sender': sender, 'receiver': selectedStudent });
+        messageInput.val('');
 
-  // Clear the input field
-  chatInput.value = '';
+        var messageContainer = document.getElementById('chat-messages-' + selectedStudent);
+        var newMessage = document.createElement('div');
+        newMessage.className = 'chat-message sent-message';
+        newMessage.innerText = 'You: ' + message;
+        messageContainer.appendChild(newMessage);
+      });
+    }
+  });
 });
 </script>
+
+
+
 <script>
   // Function to switch sections
   function switchSection(sectionName) {
@@ -127,6 +192,5 @@ document.getElementById('send-button').addEventListener('click', () => {
     event.target.classList.add('active');
   }
 </script>
-
 </body>
 </html>

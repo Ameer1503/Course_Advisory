@@ -7,7 +7,7 @@
 
 /* Page styles */
 body {
-  background-color: #CFCFCF;
+  background-color: #fffff0;
   font-family: Arial, sans-serif;
 }
 
@@ -15,7 +15,7 @@ header {
   padding: 2rem;
   text-align: center;
   color: #212529;
-  background-color: #f9f9f9;
+  background-color: #f8f9fa;
 }
 
 h1 {
@@ -310,8 +310,8 @@ button:hover {
 }
 
 .sidebar {
-    width: 20%;
-    background-color: #f1f1f1;
+    width: 250px;
+    background-color: #CFCFCF;
     height: 100vh;
     position: fixed;
     left: 0;
@@ -349,8 +349,8 @@ button:hover {
 .sidebar nav li {
     margin-bottom: 10px;
     color: black;
-    padding: 10px 0;
-    font-size: 1.5rem;
+    padding: 10px 10px;
+    font-size: 1.2rem;
     cursor: pointer;
 }
 
@@ -379,3 +379,93 @@ button:hover {
   border-radius: 5px;
   background-color: #f7f7f7;
 }
+
+.chat-box {
+   margin-bottom: 20px;
+   border: 1px solid #ccc;
+   padding: 10px;
+}
+
+/* Style for chat messages */
+.chat-message {
+  padding: 5px;
+  margin-bottom: 10px;
+  color: white;
+  display: block;
+  width: fit-content;
+}
+
+.sent-message {
+  background-color: green;
+  text-align: right;
+  border-radius: 5px;
+  margin-left: auto;
+}
+
+.received-message {
+  background-color: blue;
+  text-align: left;
+  border-radius: 5px;
+  margin-right: auto;
+}
+.student-info {
+    max-width: 600px;
+    margin: 200px auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f7f7f7;
+}
+
+.student-info p {
+    margin-bottom: 12px;
+    padding: 10px;
+    font-size: 1.2rem;
+}
+
+  .faq-list {
+    list-style-type: none;
+    padding: 0;
+  }
+
+  .faq-item {
+    margin-bottom: 20px;
+  }
+
+  .question {
+    cursor: pointer;
+    background-color: #f5f5f5;
+    padding: 10px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+  }
+
+  .question-text {
+    flex-grow: 1;
+    font-weight: bold;
+  }
+
+  .toggle-icon {
+    margin-left: 10px;
+  }
+
+  .answer {
+    display: none;
+    background-color: #f9f9f9;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+  }
+
+  .active {
+    background-color: #e6e6e6;
+  }
+
+  .toggle-icon i {
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .toggle-icon i.fa-minus {
+    transform: rotate(180deg);
+  }
