@@ -1,10 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Lecturer Registration</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+
+<div class="flash-messages">
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.type }}">{{ message.message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+</div>
   <div class="container">
       <div class="admin-icon">
     <img src="{{ url_for('static', filename='img/teacher.png') }}" alt="" sizes="">
@@ -14,15 +26,8 @@
     <h1>Lecturer Registration</h1>
         </div>
         <div class="card-body">
-          {% with messages = get_flashed_messages() %}
-            {% if messages %}
-              {% for message in messages %}
-                <div class="alert alert-{{ message[1] }}">{{ message[0] }}</div>
-              {% endfor %}
-            {% endif %}
-          {% endwith %}
 
-    <form method="POST" action="{{ url_for('lecturer_register') }}">
+    <form method="POST" action="{{ url_for('lecturer_register') }}" enctype="multipart/form-data">
       {{ form.csrf_token }}
 
       <div class="form-group">
@@ -44,6 +49,11 @@
         <label class="form-label" for="email">Email:</label>
         {{ form.email(class_='form-control') }}
       </div>
+
+      <div class="form-group">
+      <label for="profile_image">Profile Image</label>
+      {{ form.profile_image(class="form-control-file") }}
+    </div>
 
       <div class="form-group">
         <label class="form-label" for="password">Password:</label>

@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Lecturer Dashboard</title>
   <!-- Include CSS and other necessary resources -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -29,10 +31,13 @@
      <!-- Dashboard Section -->
   <div id="dashboard-section" class="section">
     <!-- Dashboard Content -->
-      <div class="student-info">
-        <h2>Student Information:</h2>
+      <div class="dashboard-info">
+        <h2>Lecturer Information:</h2>
           <br>
           <br>
+        <div class="profile-image-container">
+                <img src="{{ url_for('static', filename='images/lecturers/' + lecturer.profile_image) }}" alt="Profile Image">
+        </div>
         <p><strong>Staff ID:</strong> {{ lecturer.staff_id }}</p>
         <p><strong>First Name:</strong> {{ lecturer.firstname }}</p>
         <p><strong>Last Name:</strong> {{ lecturer.lastname }}</p>
@@ -118,6 +123,7 @@ $(function() {
         </form>
       `;
       chatContainer.appendChild(chatBox);
+
 
       // Retrieve chat history for the selected student
       $.ajax({

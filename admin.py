@@ -1,19 +1,25 @@
 import base64
 import os
 
-from flask import redirect, url_for
+from flask import redirect, url_for, session, abort
 from flask_admin.contrib.sqla import ModelView
-from flask_admin import Admin
-from flask_admin.form import FileUploadField
-from flask_login import current_user
+from flask_admin import Admin, AdminIndexView
+from flask_admin.form import FileUploadField, rules
+from flask_login import current_user, LoginManager, login_required
 from flask_wtf.file import FileField, FileAllowed
 from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
-from wtforms import TextAreaField
+from wtforms import TextAreaField, PasswordField
 from wtforms.widgets import TextArea
 
 import app
 
+# class SecureModelView(ModelView):
+#     def is_accessible(self):
+#         if "logged in" in session:
+#             return True
+#         else:
+#             abort(403)
 # Add more ModelViews for other models if needed
 
 level_choices = [
@@ -30,7 +36,7 @@ class StudentAdmin(ModelView):
         'lastname': 'Last Name',
         'email': 'Email',
         'level': 'Level',
-        'image': 'Image',
+        'profile_image': 'Profile Image'
     }
 
     # Set the column filters to be displayed in the list view
@@ -40,7 +46,7 @@ class StudentAdmin(ModelView):
     column_searchable_list = ['matric_no', 'email']
 
     # Set the form fields to be displayed in the create/edit views
-    form_columns = ['matric_no', 'firstname', 'lastname', 'email', 'level', 'image', 'password' ]
+    form_columns = ['matric_no', 'firstname', 'lastname', 'email', 'level', 'password', 'profile_image' ]
     form_choices = {
         'level': level_choices
     }
@@ -51,39 +57,40 @@ class StudentAdmin(ModelView):
         'firstname': 'First Name',
         'lastname': 'Last Name',
         'email': 'Email',
-        'image': 'Image',
-        'password': 'Password'
+        'password': 'Password',
+        'profile_image': 'Profile Image'
+    }
+
+    # Set the form field types for profile_image
+    form_extra_fields = {
+        'profile_image': FileUploadField('Profile Image', base_path='static/images/students')
     }
 
     form_overrides = {
-        'image': FileUploadField
+        'password': PasswordField,
+        'profile_image': FileUploadField
     }
 
-    form_args = {
-        'image': {
-            'label': 'Image',
-            'base_path': '/static/images/student' # Path to save uploaded images
-
+    form_widget_args = {
+        'password': {
+            'autocomplete': 'new-password',  # Prevent browser autofill
+            'class': 'password-field'  # Apply a CSS class to the password field
         }
     }
 
+    form_rules = [
+        rules.FieldSet(('matric_no', 'firstname', 'lastname', 'email', 'level', 'profile_image'),
+                       'Student Information'),
+        rules.Field('password')
+    ]
+
     def on_model_change(self, form, model, is_created):
-        image_file = form.image.data
-        if image_file:
-            image_data = image_file.read()
-            model.image = base64.b64encode(image_data)
-
-            print('Image saved:', model.image)  # Add this line to check the image data
-
-            # Save the file to the specified path
-            filename = secure_filename(image_file.filename)
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            image_file.save(file_path)
-
-            print('Image saved at:', file_path)  # Add this line to check the saved path
+        if form.password.data:
+            model.password = generate_password_hash(form.password.data)
+        else:
+            del model.password  # Remove the password field from the update if it's empty
 
 
-        super(StudentAdmin, self).on_model_change(form, model, is_created)
 
 
 class LecturerAdmin(ModelView):
@@ -93,7 +100,7 @@ class LecturerAdmin(ModelView):
         'firstname': 'First Name',
         'lastname': 'Last Name',
         'email': 'Email',
-        'image': 'Image',
+        'profile_image': 'Profile Image'
 
     }
 
@@ -104,7 +111,7 @@ class LecturerAdmin(ModelView):
     column_searchable_list = ['staff_id', 'email']
 
     # Set the form fields to be displayed in the create/edit views
-    form_columns = ['staff_id', 'firstname', 'lastname', 'email', 'image', 'password']
+    form_columns = ['staff_id', 'firstname', 'lastname', 'email', 'password', 'profile_image']
 
     # Set the form field labels to be displayed in the create/edit views
     form_labels = {
@@ -112,37 +119,36 @@ class LecturerAdmin(ModelView):
         'firstname': 'First Name',
         'lastname': 'Last Name',
         'email': 'Email',
-        'image': 'Image',
-        'password': 'Password'
+        'password': 'Password',
+        'profile_image': 'Profile Image'
+    }
+
+    # Set the form field types for profile_image
+    form_extra_fields = {
+        'profile_image': FileUploadField('Profile Image', base_path='static/images/lecturers')
     }
 
     form_overrides = {
-        'image': FileUploadField
+        'password': PasswordField,
+        'profile_image': FileUploadField
     }
 
-    form_args = {
-        'image': {
-            'label': 'Image',
-            'base_path': '/static/images/lecturer'  # Path to save uploaded images
+    form_widget_args = {
+        'password': {
+            'autocomplete': 'new-password',  # Prevent browser autofill
+            'class': 'password-field'  # Apply a CSS class to the password field
         }
     }
 
+    form_rules = [
+        rules.FieldSet(('staff_id', 'firstname', 'lastname', 'email', 'profile_image'),
+                       'Lecturer Information'),
+        rules.Field('password')
+    ]
     def on_model_change(self, form, model, is_created):
-        image_file = form.image.data
-        if image_file:
-            image_data = image_file.read()
-            model.image = base64.b64encode(image_data)
+        if form.password.data:
+            model.password = generate_password_hash(form.password.data)
 
-            print('Image saved:', model.image)  # Add this line to check the image data
-
-            # Save the file to the specified path
-            filename = secure_filename(image_file.filename)
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            image_file.save(file_path)
-
-            print('Image saved at:', file_path)  # Add this line to check the saved path
-
-        super(LecturerAdmin, self).on_model_change(form, model, is_created)
 
 
 class ChatAdmin(ModelView):
@@ -172,5 +178,30 @@ class FAQAdmin(ModelView):
 
     def scaffold_form(self):
         form_class = super(FAQAdmin, self).scaffold_form()
+        form_class.answer.widget = TextArea()
+        return form_class
+
+
+class OpinionAdmin(ModelView):
+    column_list = ['id','profession', 'answer']
+    column_searchable_list = ['id']
+
+    form_columns = ['profession', 'answer']
+
+    # Set the form field labels to be displayed in the create/edit views
+    form_labels = {
+        'profession': 'Question',
+        'answer': 'Answer',
+    }
+
+    form_overrides = {
+        'answer': TextAreaField
+    }
+
+    def on_model_change(self, form, model, is_created):
+        model.answer = model.answer.replace('\r\n', '<br>')
+
+    def scaffold_form(self):
+        form_class = super(OpinionAdmin, self).scaffold_form()
         form_class.answer.widget = TextArea()
         return form_class

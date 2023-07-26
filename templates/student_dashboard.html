@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Student Dashboard</title>
   <!-- Include CSS and other necessary resources -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -18,6 +20,7 @@
                     <li class="sidebar-item active" onclick="switchSection('dashboard')">Dashboard</li>
                     <li class="sidebar-item" onclick="switchSection('student-chat')">Consult Lecturer</li>
                     <li class="sidebar-item" onclick="switchSection('faq')">FAQ</li>
+                    <li class="sidebar-item" onclick="switchSection('opinion')">Suggestion</li>
                     <li class="sidebar-item" ><a href="{{ url_for('logout') }}">Logout</a></li>
                 </ul>
             </nav>
@@ -30,10 +33,15 @@
 
      <!-- Dashboard Section -->
     <div id="dashboard-section" class="section">
-        <div class="student-info">
+        <div class="dashboard-info">
         <h2>Student Information:</h2>
         <br>
         <br>
+        <div class="profile-image-container">
+            {% if student.profile_image %}
+                <img src="{{ url_for('static', filename='images/students/' + student.profile_image) }}" alt="Profile Image">
+            {% endif %}
+        </div>
         <p><strong>Matric No:</strong> {{ student.matric_no }}</p>
         <p><strong>First Name:</strong> {{ student.firstname }}</p>
         <p><strong>Last Name:</strong> {{ student.lastname }}</p>
@@ -75,6 +83,21 @@
           <span class="toggle-icon"><i class="fas fa-plus"></i></span>
         </div>
         <div class="answer">{{ faq.answer | safe}}</div>
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+
+    <div id="opinion-section" class="section" style="display: none;">
+  <h1>Frequently Asked Questions</h1>
+  <ul class="faq-list">
+    {% for opinion in opinions %}
+      <li class="faq-item">
+        <div class="question">
+          <span class="question-text">{{ opinion.profession }}</span>
+          <span class="toggle-icon"><i class="fas fa-plus"></i></span>
+        </div>
+        <div class="answer">{{ opinion.answer | safe}}</div>
       </li>
     {% endfor %}
   </ul>

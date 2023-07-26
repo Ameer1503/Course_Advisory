@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Course Advisory System</title>
     <!-- Include Bootstrap CSS -->
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -9,7 +11,17 @@
     <header>
       <h1>Course Advisory System</h1>
     </header>
+    <div class="flash-messages">
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.type }}">{{ message.message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+</div>
     <main>
+
       <div class="icon-box-container">
         <a href="/student" class="icon-box">
           <img src="{{ url_for('static', filename='img/student.png') }}" alt="Student">
